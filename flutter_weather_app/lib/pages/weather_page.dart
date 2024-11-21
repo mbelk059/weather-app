@@ -1,15 +1,138 @@
-import "package:flutter/material.dart";
+import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+import 'package:flutter_weather_app/models/weather_models.dart';
+import 'package:flutter_weather_app/services/weather_service.dart';
 
-class WeatherApp extends StatefulWidget {
-  const WeatherApp({super.key});
+class WeatherPage extends StatefulWidget {
+  const WeatherPage({super.key});
 
   @override
-  State<WeatherApp> createState() => _WeatherAppState();
+  State<WeatherPage> createState() => _WeatherPageState();
 }
 
-class _WeatherAppState extends State<WeatherApp> {
+class _WeatherPageState extends State<WeatherPage> {
+  // api key
+  final _weatherService = WeatherService('a6a84991b699fbf44f5ac00e7311cbaa');
+  Weather? _weather;
+
+  // fetch weather
+  _fetchWeather() async {
+    // get current weather
+    String cityName = await _weatherService.getCurrentCity();
+
+    // get weather for the city
+    try {
+      final weather = await _weatherService.getWeather(cityName);
+      setState(() {
+        _weather = weather;
+      });
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  // weather animation
+  String getWeatherAnimation(String? mainCondition) {
+    if (mainCondition == null) {
+      return 'assets/thunder.json'; // default animation
+    }
+
+    switch (mainCondition.toLowerCase()) {
+      case 'clouds':
+      case 'mist':
+      case 'smoke':
+      case 'haze':
+      case 'dust':
+      case 'fog':
+        return 'assets/rain.json';
+      case 'rain':
+      case 'drizzle':
+      case 'shower rain':
+        return 'assets/rain.json';
+      case 'thunderstorm':
+        return 'assets/thunder.json';
+      case 'clear':
+        return 'assets/rain.json';
+      default:
+        return 'assets/rain.json';
+    }
+  }
+
+  // init
+  @override
+  void initState() {
+    super.initState();
+
+    _fetchWeather();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return Scaffold(
+      backgroundColor: Color.fromARGB(255, 37, 36, 36),
+      body: Center(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 30.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SizedBox(
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.pin_drop,
+                        size: 50,
+                        color: Color.fromARGB(255, 91, 91, 91),
+                      ),
+                      const SizedBox(
+                        height: 20,
+                      ),
+                      Text(
+                        _weather?.cityName ?? "Loading city...",
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 174, 174, 174),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: // animation
+                      Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Lottie.asset(
+                          getWeatherAnimation(_weather?.mainConditions)),
+                      // weather condition
+                      // Text(_weather?.mainConditions ?? ''),
+                    ],
+                  ),
+                ),
+                SizedBox(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      // weather temperature
+                      Text(
+                        '${_weather?.temperature.round()}°',
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 174, 174, 174),
+                          fontSize: 50,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
